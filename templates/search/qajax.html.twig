@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tech My Team - Dashboard{% endblock %}
+
+{% block body %}
+
+    <!-- START CONTAINER FLUID -->
+    <div class=" container-fluid   container-fixed-lg">
+        <!-- BEGIN PlACE PAGE CONTENT HERE -->
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header card-header-primary">
+                    <b>"{{ q }}"</b>, <p class="h3">{{ 'Your search'}}  <b>{{ results|length }}</b> {{ 'result'}}.</p>
+                </div>
+
+            </div>
+        </div>
+        {% for result in results %}
+            {% set hit = result.result.hit %}
+            {% set article = result.transformed %}
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="h3">
+                        [{{ ('type_'~article.type)|trans({}, 'blog') }}] {{ article.name }} &raquo; {{ 'score'|trans }} <b>{{ hit._score }}</b>
+                    </h2>
+                </div>
+            </div>
+        {% endfor %}
+        <div class="col-md-12">
+            {% if results is empty %}
+                <p class="h3">{{ 'no_results'|trans }}</p>
+            {% endif %}
+        </div>
+        <!-- END PLACE PAGE CONTENT HERE -->
+    </div>
+    <!-- END PAGE CONTAINER -->
+{% endblock %}

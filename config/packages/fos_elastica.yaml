@@ -1,0 +1,44 @@
+# Read the documentation: https://github.com/FriendsOfSymfony/FOSElasticaBundle/blob/master/doc/setup.md
+fos_elastica:
+    clients:
+        default: { host: '%es_host%', port: '%es_port%' }
+    indexes:
+        app:
+            use_alias: true
+            types:
+                articles:
+                    properties:
+                        type: ~
+                        name: ~
+                        slug: ~
+                        keyword: ~
+                    persistence:
+                        driver: orm
+                        model: App\Entity\Article
+                        provider: ~
+                        listener:
+                            insert: false
+                            update: false
+                            delete: false
+
+        suggest:
+            use_alias: true
+            settings:
+                index:
+                    analysis:
+                        analyzer:
+                            suggest_analyzer:
+                                type: custom
+                                tokenizer: standard
+                                filter: [lowercase, asciifolding]
+            types:
+                keyword:
+                    properties:
+                        locale:
+                            type: keyword
+                        suggest:
+                            type: completion
+                            analyzer: suggest_analyzer
+                            contexts:
+                                - name: locale
+                                  type: category
