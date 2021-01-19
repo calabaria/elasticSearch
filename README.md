@@ -1,7 +1,7 @@
 ## Implémenter un moteur de recherche avec elasticsearch et Symfony 5
 
 <h4>Prérequis</h4>
-<p>Je vais supposer que vous avez au moins une connaissance basique de Symfony4. Que vous savez comment initialiser une application et que vous savez comment gérer un schéma de base de données avec un ORM (nous utiliserons ici Doctrine). Comme un fichier "Docker compose" sera utilisé</p>
+<p>Je vais supposer que vous avez au moins une connaissance basique de Symfony5. Que vous savez comment initialiser une application et que vous savez comment gérer un schéma de base de données avec un ORM (nous utiliserons ici Doctrine), un fichier "Docker" sera utilisé aussi.</p>
 
 <h4>Configuration</h4>
 PHP 7.4, Symfony 5.2
@@ -17,3 +17,5 @@ PHP 7.4, Symfony 5.2
   ```
   
 <p>Elasticsearch head va nous permettre de rapidement pouvoir contrôler l'état de notre cluster Elasticsearch local et adminer est une interface basique d'administration de bases de données (comme PhpMyAdmin).</p>
+
+<p>Jetons un coup d'œil au fichier `docker-compose.yaml` :</p>
