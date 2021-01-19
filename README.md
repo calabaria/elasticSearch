@@ -1,6 +1,6 @@
 ## Implémenter un moteur de recherche avec elasticsearch et Symfony 5
 
-### Prérequis
+![Map-Marker-Marker](https://user-images.githubusercontent.com/16940107/105041268-107fb880-5a63-11eb-860f-b678d00489bc.png) Prérequisss
 
 #### Configuration
 PHP 7.4, Symfony 5.2
