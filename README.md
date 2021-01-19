@@ -86,3 +86,13 @@ Nous avons deux sections distinctes. La première contient les composants relati
 ``` docker-compose -f docker-compose.yaml up -d ```
 
 ![docker-compose](https://user-images.githubusercontent.com/16940107/105088910-bdc2f280-5a9c-11eb-8028-86d8cdb1257f.png)
+
+Maintenant, on peut accéder aux composants exposés en HTTP du hub Docker :
+
+* Adminer http://localhost:8089
+* elastic head http://localhost:9109/
+* elastic http://localhost:9209/
+
+Plusieurs remarques : pour accéder à la base de données avec adminer, on doit spécifier un serveur, pour notre hub, c'est la clé container_name que nous avons paramétré dans le fichier docker-compose.yml. Dans ce cas c'est sb-db, l'utilisateur est "root", de même pour le mot de passe. Ne pas utiliser en production ! ⛔
+
+![adminer](https://user-images.githubusercontent.com/16940107/105091399-15169200-5aa0-11eb-9e6e-06aea3d9a672.png)
