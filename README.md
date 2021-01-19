@@ -1,6 +1,7 @@
 ## Implémenter un moteur de recherche avec elasticsearch et Symfony 5
 
-![Map-Marker-Marker](https://user-images.githubusercontent.com/16940107/105041268-107fb880-5a63-11eb-860f-b678d00489bc.png) Prérequis
+<h4>Prérequis</h4>
+<p>Je vais supposer que vous avez au moins une connaissance basique de Symfony4. Que vous savez comment initialiser une application et que vous savez comment gérer un schéma de base de données avec un ORM (nous utiliserons ici Doctrine). Comme un fichier "Docker compose" sera utilisé</p>
 
 <h4>Configuration</h4>
 PHP 7.4, Symfony 5.2
