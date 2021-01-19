@@ -81,4 +81,4 @@ services:
     ports:
       - "9109:9100"
 ```
-test
+Nous avons deux sections distinctes. La première contient les composants relatifs à Elasticsearch, la seconde étant relative à la base de données. Pour lancer le hub Docker, lancez la commande suivante :
