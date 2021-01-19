@@ -20,7 +20,7 @@ PHP 7.4, Symfony 5.2
 
 Jetons un coup d'œil au fichier `docker-compose.yaml` :
 
-```html
+```yaml
 # ./docker-compose.yaml
 
 # DEV docker compose file ——————————————————————————————————————————————————————
@@ -82,3 +82,7 @@ services:
       - "9109:9100"
 ```
 Nous avons deux sections distinctes. La première contient les composants relatifs à Elasticsearch, la seconde étant relative à la base de données. Pour lancer le hub Docker, lancez la commande suivante :
+
+``` docker-compose -f docker-compose.yaml up -d ```
+
+![docker-compose](https://user-images.githubusercontent.com/16940107/105088910-bdc2f280-5a9c-11eb-8028-86d8cdb1257f.png)
