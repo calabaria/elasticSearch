@@ -15,5 +15,24 @@ PHP 7.4, Symfony 5.2
   * MySQL 5.7
   * Adminer (last stable)
   ```
-
+  
+  ```html
+  <div class="col-md-6">
+                        <form class="search-job" action="{{ path('search') }}">
+                            <div class="row no-gutters">
+                                <div class="col-md-8">
+                                    <div class="form-group">
+                                        <label>Votre recherche</label>
+                                        <div class="form-field">
+                                            <div class="icon"><span class="icon-briefcase"></span></div>
+                                            <input type="text" id="search-field" name="q" class="form-control" autocomplete="off" list="suggest-list" value="{{ app.request.query.get('q') }}" placeholder="Search..." >
+                                        </div>
+                                    </div>
+                                    <datalist id="suggest-list">
+                                    </datalist>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+```
 <p>Elasticsearch head va nous permettre de rapidement pouvoir contrôler l'état de notre cluster Elasticsearch local et adminer est une interface basique d'administration de bases de données (comme PhpMyAdmin).</p>
