@@ -5,4 +5,4 @@
 #### Configuration
 PHP 7.4, Symfony 5.2
 
-![image de fond](https://resize-europe1.lanmedia.fr/r/622,311,forcex,center-middle/img/var/europe1/storage/images/europe1/technologies/google-accuse-de-manipulation-pour-espionner-des-utilisateurs-3809150/51162509-1-fre-FR/Google-accuse-de-manipulation-pour-espionner-des-utilisateurs.jpg)
+![Capture d’écran 2020-12-25 à 00 53 47](https://user-images.githubusercontent.com/16940107/105039129-7a4a9300-5a60-11eb-96c4-632b5e2eda8b.png)
