@@ -83,7 +83,7 @@ services:
 ```
 Nous avons deux sections distinctes. La première contient les composants relatifs à Elasticsearch, la seconde étant relative à la base de données. Pour lancer le hub Docker, lancez la commande suivante :
 
-``` docker-compose -f docker-compose.yaml up -d ```
+`docker-compose -f docker-compose.yaml up -d`
 
 ![docker-compose](https://user-images.githubusercontent.com/16940107/105088910-bdc2f280-5a9c-11eb-8028-86d8cdb1257f.png)
 
@@ -96,3 +96,98 @@ Maintenant, on peut accéder aux composants exposés en HTTP du hub Docker :
 Plusieurs remarques : pour accéder à la base de données avec adminer, on doit spécifier un serveur, pour notre hub, c'est la clé container_name que nous avons paramétré dans le fichier docker-compose.yml. Dans ce cas c'est sb-db, l'utilisateur est "root", de même pour le mot de passe. Ne pas utiliser en production ! ⛔
 
 ![adminer](https://user-images.githubusercontent.com/16940107/105091399-15169200-5aa0-11eb-9e6e-06aea3d9a672.png)
+
+Pour ce projet, je démarre le serveur HTTP local avec la commande suivante :
+
+`php -S localhost:8000 -t public`
+
+Alors, on peut accéder au projet localement à l'URL http://localhost:8000. Sur mon MacBookPro, j'ai installé PHP avec Homebrew, sur ma station de travail macOS 10.13.6 (High Sierra), PHP 7.2 était la version installée (les trois configurations fonctionnent sans le moindre problème). Nous ne verrons pas ici comment un installer un environnement PHP complet avec Docker. Maintenant que notre environnement de développement est prêt, voyons comment créer un index de données Elasticsearch.
+
+<h4>Installer et configurer le bundle FOSElastica</h4>
+
+Tout d'abord nous allons installer le bundle FOSElastica (Vous pourriez évidemment utiliser directement elastica ou une autre interface). Veuillez noter que nous n'utiliserons pas la dernière version d'Elasticsearch (7.3) car le bundle ne semble pas encore gérer cette version. Notez aussi que changer la version d'Elasticsearch que l'on utilise est aussi simple que de changer 6.8.10 par 7.10.0 dans le fichier docker compose ! 
+C'est l'immense avantage d'utiliser Docker. 💪
+
+`composer require friendsofsymfony/elastica-bundle`
+
+Ajoutez ces deux lignes dans votre fichier `.env` :
+
+```env
+ES_HOST=localhost
+ES_PORT=9209
+```
+
+Donc nous devons récupérer ces deux variables d'environnement dans les paramètres de l'application. Ajoutez les deux lignes suivantes à votre fichier `config/services.yaml` :
+
+```yaml
+# config/services.yaml
+parameters:
+  es_host: '%env(ES_HOST)%'
+  es_port: '%env(ES_PORT)%'
+```
+
+Enfin, nous pouvons utiliser ces deux nouveaux paramètres dans le fichier de configuration fos_elastica (on pourrait aussi récupérer directement les variables d'environnement avec `%env()%` ) :
+
+```yaml
+fos_elastica:
+    clients:
+        default: { host: '%es_host%', port: '%es_port%' }
+```
+
+Ouvrez le fichier `config/packages/fos_elastica.yaml` le contenu de votre fichier doit ressembler à ça :
+
+```yaml
+# config/packages/fos_elastica.yaml
+fos_elastica:
+    clients:
+        default: { host: '%es_host%', port: '%es_port%' }
+    indexes:
+        app: null
+```
+
+Maintenant, on peut lancer la création de l'index pour vérifier que notre paramétrage est correct :
+
+`php bin/console fos:elastica:create` 
+
+![elastic-head](https://user-images.githubusercontent.com/16940107/105107596-c1fd0900-5ab8-11eb-8269-4e6b8f6208f4.png)
+
+Maintenant, voyons comment ajouter des données dans l'index. Nous ne verrons pas ici tout le processus de création d'un modèle, des entités et tables correspondantes. j'ai une table article qui contient tous mes articles. Notre prochain objectif va être d'ajouter tous les articles à l'index Elasticsearch.
+
+<h4>Indexation des données dans Elasticsearch</h4>
+
+Dans la suite de cet article, je prendrai mon schéma de base comme référence (si vous avez un autre shéma de base, remplacez donc App\Entity\Article par le nom de votre entité). Même chose au sujet des propriétés de l'entité. Tout d'abord, ajoutons quelques champs dans le mapping Elasticsearch :
+
+```yaml
+# Read the documentation: https://github.com/FriendsOfSymfony/FOSElasticaBundle/blob/master/doc/setup.md
+fos_elastica:
+    clients:
+        default: { host: '%es_host%', port: '%es_port%' }
+    indexes:
+        app:
+            types:
+                articles:
+                    properties:
+                        type: ~
+                        name: ~
+                        slug: ~
+                        keyword: ~
+                    persistence:
+                        driver: orm
+                        model: App\Entity\Article
+ ```
+ 
+Gardons le paramétrage par défaut et lançons la commande d'indexation qui va nous permettre de rafraîchir les données de l'index
+
+`php bin/console fos:elastica:populate`
+
+![populate](https://user-images.githubusercontent.com/16940107/105187016-96b70000-5b32-11eb-9e97-105487ce66ee.png)
+
+
+
+
+
+
+
+
+
+
