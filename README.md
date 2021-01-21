@@ -319,12 +319,30 @@ Comme indiqué auparavant, tout d'abord nous récupérons l'objet "hit" par lequ
 
 ![search-form](https://user-images.githubusercontent.com/16940107/105356487-c0842b80-5bf3-11eb-80d7-4ca53f93c816.png)
 
+<h4>Utilisation d'un alias Elasticsearch</h4>
 
+Jusqu'à maintenant nous utilisions directement l'index principal pour ajouter des données. Mais que se passe t-il si le mapping change ? Si des champs sont ajoutés ou supprimés ? Ça pourrait être dangereux... Utiliser un alias nous permet d'éviter des périodes d'indisponibilité comme la bascule des index est faite uniquement quand toutes les données ont été indexées. C'est particulièrement vrai si vous avez un grand volume de données et que l'indexation prend un temps conséquent. Tout d'abord supprimons l'index "app" qui existe. On peut le faire avec une commande cURL (on peut aussi utiliser le plugin head : actions -> effacer...) :
 
+`curl -i -X DELETE 'http://localhost:9209/app'` comme réultat de la commande on aura le message suivant `{"acknowledged":true}` 
 
+Ajouter l'option `"use_alias: true"` dans la configuration fos_elastica :
 
+```yaml
+# config/packages/fos_elastica.yaml
+fos_elastica:
+    clients:
+        default: { host: '%es_host%', port: '%es_port%' }
+    indexes:
+        app:
+            use_alias: true
+            types:
+                articles:
+                    # ...
+```
 
+Maintenant, lançons la commande `fos:elastica:populate`. Cette fois nous pouvons voir que l'index créé ne porte plus le nom "app" mais un suffixe de date a été ajouté. De plus un alias a été automatiquement ajouté à l'index, c'est cet alias qui porte le nom "app" désormais. À ce point, votre cluster Elasticsearch devrait ressembler à ça :
 
+![populate 2](https://user-images.githubusercontent.com/16940107/105363558-7784a500-5bfc-11eb-99c5-48c6e86d61b5.png)
 
 
 
