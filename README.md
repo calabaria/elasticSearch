@@ -308,12 +308,16 @@ L'action de ce contrôleur va être très succincte. Nous récupérons le mot cl
 {% endblock %}
 ```
 
+Regardons le template, les deux lignes les plus importantes sont au tout début de la boucle `for` :
 
+```twig
+{% set hit = result.result.hit %}
+{% set article = result.transformed %}
+```
 
+Comme indiqué auparavant, tout d'abord nous récupérons l'objet "hit" par lequel nous pouvons récupérer le score avec hit._score. (il est affiché sur la liste de résultats à droite du titre de l'article ou du snippet). Ensuite, nous récupérons l'entité Doctrine Article avec result.transformed. Maintenant, nous pouvons accéder aux getters comme nous avons l'habitude de le faire avec Twig. Par exemple, article.isArticle va retourner vrai si l'article est un article de blog et faux si c'est un snippet. (il y a uniquement deux types d'article). Et voilà ! Vous pouvez tester la recherche avec le formulaire généré :
 
-
-
-
+![search-form](https://user-images.githubusercontent.com/16940107/105356487-c0842b80-5bf3-11eb-80d7-4ca53f93c816.png)
 
 
 
