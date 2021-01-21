@@ -342,11 +342,11 @@ fos_elastica:
 
 Maintenant, lançons la commande `fos:elastica:populate`. Cette fois nous pouvons voir que l'index créé ne porte plus le nom "app" mais un suffixe de date a été ajouté. De plus un alias a été automatiquement ajouté à l'index, c'est cet alias qui porte le nom "app" désormais. À ce point, votre cluster Elasticsearch devrait ressembler à ça :
 
-![populate 2](https://user-images.githubusercontent.com/16940107/105363558-7784a500-5bfc-11eb-99c5-48c6e86d61b5.png)
+![Capture d’écran 2021-01-21 à 15 26 25](https://user-images.githubusercontent.com/16940107/105364189-29bc6c80-5bfd-11eb-8f2f-4f118a9f87c5.png)
 
+Lancez de nouveau la commande populate, mais cette fois avec l'option `--no-delete`. On voit qu'il y a deux index mais l'alias pointe désormais sur le plus récent. La gestion de l'alias est automatiquement prise en charge par le bundle, on n'a donc pas à le faire manuellement. L'index le plus vieux a été "fermé". ça veut dire que les données sont toujours présentes mais on ne peut plus y accéder, les opérations de lecture / écriture sont bloquées. Le cluster ressemble désormais à cela :
 
-
-
+![Capture d’écran 2021-01-21 à 15 28 40](https://user-images.githubusercontent.com/16940107/105364422-6ee09e80-5bfd-11eb-8ef8-c7baa1bd37f6.png)
 
 
 
