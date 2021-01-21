@@ -182,6 +182,153 @@ Gardons le paramétrage par défaut et lançons la commande d'indexation qui va 
 
 ![populate](https://user-images.githubusercontent.com/16940107/105187016-96b70000-5b32-11eb-9e97-105487ce66ee.png)
 
+Si vous voyez ceci, c'est que la commande s'est déroulée avec succès. Nous pouvons vérifier que les documents ont bien été indexés. Ouvrez l'interface "Elasticsearch head", cliquez sur l'onglet "naviguer" puis cliquez sur un document pour voir le JSON brut qui lui est attaché. On peut voir l'id de l'entité (14) et les différents champs que nous avons déclaré précédemment (type, name, slug et keyword).
+
+![json-result](https://user-images.githubusercontent.com/16940107/105189974-d501ee80-5b35-11eb-8c23-c6a5aa823bf3.png)
+
+Maintenant que nous avons un index avec quelques données, essayons d'y faire une recherche.
+
+<h4>Rechercher et afficher des résultats</h4>
+
+Par souci de clarté, nous allons créer un contrôleur basique dédié à la recherche. Premièrement, nous devons affecter une variable de liaison (🇬🇧 bind) au service de recherche lié au type articles. Ce service est généré automatiquement par le bundle FOSElastica en fonction des types déclarés dans la configuration. Ajoutez cette ligne au fichier `config/services.yaml`.
+
+```yaml
+# config/services.yaml
+services:
+    _defaults:
+        bind:
+            $articlesFinder: '@fos_elastica.finder.app.articles'
+```
+
+Grâce à l'autoloading, nous pouvons désormais injecter ce service dans notre nouveau contrôleur :
+
+```php
+<?php declare(strict_types=1);
+
+// src/Controller/SearchPart1Controller.php
+
+namespace App\Controller;
+
+use Elastica\Util;
+use FOS\ElasticaBundle\Finder\TransformedFinder;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\Routing\Annotation\Route;
+
+
+final class SearchController extends AbstractController
+{
+    /**
+     * @Route("/",  name="search")
+     */
+    public function search(Request $request, SessionInterface $session, TransformedFinder $articlesFinder): Response
+    {
+        $q = (string) $request->query->get('q', '');
+        $results = !empty($q) ? $articlesFinder->findHybrid(Util::escapeTerm($q)) : [];
+
+        $session->set('q', $q);
+        $compacted = compact('results', 'q');
+        return $this->render('search/index.html.twig', $compacted);
+    }
+}
+```
+
+L'action de ce contrôleur va être très succincte. Nous récupérons le mot clé à partir d'un paramètre GET (q pour "🇬🇧 query") de la requête HTTP. Ensuite nous appelons la fonction findHybrid pour chercher les articles correspondant, puis nous sauvons le mot-clé en session. Pour chaque résultat, la fonction findHybrid va retourner deux objets : Le premier, le "hit" va contenir les métas informations de la réponse brute d'Elasticsearch. C'est dans cet objet que nous allons récupérer le score du document. Quand on fournit un mot-clé, tous les résultats sont triés par score, du plus au moins pertinent. Le second objet est l'entité Doctrine liée au résultat de recherche. Ainsi, nous n'avons pas à traiter directement la réponse brute Elasticsearch. Maintenant nous pouvons afficher les résultats :
+
+```twig
+{% extends 'layout.html.twig' %}
+
+{# templates/search/index.html.twig #}
+
+{% trans_default_domain 'search' %}
+
+{% block content %}
+  <!-- START CONTAINER FLUID -->
+  <div class=" container-fluid   container-fixed-lg">
+      <!-- BEGIN PlACE PAGE CONTENT HERE -->
+      <div class="col-md-6">
+          <form class="search-job" action="{{ path('search') }}">
+              <div class="row no-gutters">
+                  <div class="col-md-8">
+                      <div class="form-group">
+                          <label>Votre recherche</label>
+                          <div class="form-field">
+                              <div class="icon"><span class="icon-briefcase"></span></div>
+                              <input type="text" id="search-field" name="q" class="form-control" autocomplete="off" list="suggest-list" value="{{ app.request.query.get('q') }}" placeholder="Search..." >
+                          </div>
+                      </div>
+                      <datalist id="suggest-list">
+                      </datalist>
+                  </div>
+              </div>
+          </form>
+      </div>
+      <div class="card card-default bg-complete" data-pages="card">
+          <div class="card-header ui-sortable-handle">
+              <div class="card-title">Searched word "{{ q }}"
+              </div>
+          </div>
+          <div class="card-body">
+              <h3 class="text-white">
+                  <span class="semi-bold">{{ 'Your search'}}</span> {{ results|length }} {{ 'result'}}.
+              </h3>
+              <p class="text-white">Suggestions :
+              </p>
+          </div>
+      </div>
+      {% for result in results %}
+          {% set hit = result.result.hit %}
+          {% set article = result.transformed %}
+          <div class="col-md-12">
+              <div class="card-body no-padding">
+                  <div id="card-circular-minimal" class="card card-default">
+                      <div class="card-header  ">
+                          <div class="card-title">
+                              {{ 'score'|trans }} <b>{{ hit._score }}</b>
+                          </div>
+                      </div>
+                      <div class="card-body">
+                          <h3> <span class="semi-bold">Type : </span> {{ (article.type)|trans({}, 'blog') }} </h3>
+                          <p> Name :{{ article.name }} </p>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      {% endfor %}
+      <div class="col-md-12">
+          {% if results is empty %}
+              <p class="h3">{{ 'no_results'|trans }}</p>
+          {% endif %}
+      </div>
+      <!-- END PLACE PAGE CONTENT HERE -->
+  </div>
+  <!-- END CONTAINER FLUID -->
+{% endblock %}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
