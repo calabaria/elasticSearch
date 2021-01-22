@@ -430,7 +430,7 @@ class ArticleProvider implements PagerProviderInterface
 
 
 
-<blockquote><p>[“Améliorer la pertinence est difficile, vraiment difficile.”](http://www.siteduzero.com) — Le blog Elasticsearch</p></blockquote>
+[“Améliorer la pertinence est difficile, vraiment difficile.”](http://www.siteduzero.com) — Le blog Elasticsearch
 
 
 
