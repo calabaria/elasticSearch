@@ -428,9 +428,88 @@ class ArticleProvider implements PagerProviderInterface
 }
 ```
 
-
-
 > [“Améliorer la pertinence est difficile, vraiment difficile.”](http://www.siteduzero.com) — Le blog Elasticsearch
+
+<h4>Installation de Kibana</h4>
+
+Tout d'abord nous allons améliorer notre stack Elasticsearch. Jusqu'à maintenant, nous avons utilisé le plugin "head" pour gérer notre cluster. Mais cet outil de développement est assez ancien et n'est plus maintenu. Donc, ajoutons Kibana à notre hub docker. Kibana est un plugin open-source de visualisation de données pour Elasticsearch. Bien sûr, il permet aussi de faire les tâches de maintenance courantes que nous avions l'habitude de faire avec head : supprimer, fermer un index, créer et supprimer un alias, vérifier un document, vérifier le mapping des index, mais il permet bien plus encore ! La liste de ce qu'il est possible de faire est assez impressionnante (regardez le menu à gauche de la capture d'écran suivante). Ajoutons l'entrée correspondante dans le fichier `docker-compose.yaml` :
+
+```yaml
+kibana:
+    container_name: sb-kibana
+    image: docker.elastic.co/kibana/kibana:6.8.10
+    ports:
+      - "5601:5601"
+    environment:
+      - "ELASTICSEARCH_URL=http://sb-elasticsearch"
+    depends_on:
+      - elasticsearch
+```
+
+Comme vous pouvez le voir, nous passons l'URL du serveur Elasticsearch dont le nom d'hôte est celui du conteneur docker (sb-elasticsearch). Nous gardons le port standard 5601. Nous utilisons aussi la même version d'image (6.8.10) que nous avons utilisée pour Elasticsearch afin qu'il n'y ait pas de problème de compatibilité. Si vous redémarrez le hub docker, vous pouvez accéder à [la page de gestion des index](http://localhost:5601/app/kibana#/management/elasticsearch/index_management/indices?_g=())
+
+![kibana](https://user-images.githubusercontent.com/16940107/105504810-7de05300-5cc8-11eb-9c01-6304a6403979.png)
+
+Voilà pour Kibana. Je vais m'arrêter ici pour cette partie, ça demanderait bien plus qu'un article pour présenter toutes les fonctionnalités. Accédez [au site officiel](https://www.elastic.co/fr/kibana) pour plus d'informations. Kibana est très puissant, il peut aussi être utilisé pour consulter vos logs Symfony ! À ce sujet, je vous conseille la lecture de [ce très intéressant article du blog JoliCode](https://jolicode.com/blog/how-to-visualize-symfony-logs-in-dev-with-elasticsearch-and-kibana).
+
+<h4>Ajout d'un autocomplete dans la barre de recherche</h4>
+
+Comme vous pouvez le voir, j'ai mis un champ de recherche dans l'entête de ce site. Ça marche, mais si nous essayions de compléter la saisie de l'utilisateur afin de lui suggérer des termes qu'il peut trouver sur ce blog ? Voyons comment nous pouvons faire cela avec Elasticsearch, nous allons construire un index qui sera dédié à cette fonctionnalité.
+
+<h5>Configuration du mapping<h5>
+  
+```yaml
+fos_elastica:
+    clients:
+        default: { host: '%es_host%', port: '%es_port%' }
+    indexes:
+        app:
+          ###
+        suggest:
+            use_alias: true
+            settings:
+                index:
+                    analysis:
+                        analyzer:
+                            suggest_analyzer:
+                                type: custom
+                                tokenizer: standard
+                                filter: [lowercase, asciifolding]
+            types:
+                keyword:
+                    properties:
+                        locale:
+                            type: keyword
+                        suggest:
+                            type: completion
+                            analyzer: suggest_analyzer
+                            contexts:
+                                - name: locale
+                                  type: category
+```
+
+Quelques explications à propos de cet index et de son mapping. Avant de déclarer le type, j'ajoute un analyseur dans la section "setting". Le filtre `asciifolding` va nous permettre d'ignorer les accents pour permettre à la suggestion de fonctionner même si ceux-ci ne sont pas utilisés. Par exemple, si on saisit "element", le mot "élément" devrait être suggéré.
+Ensuite, dans la section "type", on utilise aussi un alias tout comme l'index "app". Dans le mapping nous avons deux propriétés : suggest qui est de type "completion". Nous avons besoin de ce type particulier pour utiliser le "suggester" Elasticsearch comme nous le verrons. 
+Si nous relançons la commande d'indexation, le nouvel index est créé.
+
+![index](https://user-images.githubusercontent.com/16940107/105507881-03b1cd80-5ccc-11eb-87a7-e3d97f4f2a5e.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
