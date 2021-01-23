@@ -715,11 +715,11 @@ final class ElastiCoil
      
 Quelques explications : 💡
 
-*Comme l'action de recherche, nous récupérons la saisie de l'utilisateur par le paramètre GET "q".
-*Ensuite nous créons un objet elastica Suggest avec le nom de la propriété du mapping à utiliser.
-*Juste en dessous, on ajoute un contexte qui va nous permettre de filtrer les mots retournés : dans ce cas on filtre selon la langue de la page en cours (en ou fr).
-*Ensuite, on extrait les options retournées par la réponse Elasticsearch.
-*Finalement, nous retournons une réponse de type JSON (JsonResponse) contenant un tableau simple avec les options à afficher à l'utilisateur.
+* Comme l'action de recherche, nous récupérons la saisie de l'utilisateur par le paramètre GET "q".
+* Ensuite nous créons un objet elastica Suggest avec le nom de la propriété du mapping à utiliser.
+* Juste en dessous, on ajoute un contexte qui va nous permettre de filtrer les mots retournés : dans ce cas on filtre selon la langue de la page en cours (en ou fr).
+* Ensuite, on extrait les options retournées par la réponse Elasticsearch.
+* Finalement, nous retournons une réponse de type JSON (JsonResponse) contenant un tableau simple avec les options à afficher à l'utilisateur.
 
 
 
