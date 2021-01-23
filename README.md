@@ -494,11 +494,232 @@ Si nous relançons la commande d'indexation, le nouvel index est créé.
 
 ![index](https://user-images.githubusercontent.com/16940107/105507881-03b1cd80-5ccc-11eb-87a7-e3d97f4f2a5e.png)
 
+<h4>Peupler l'index de suggestion</h4>
+
+Maintenant, nous allons peupler le nouvel index de suggestion. Comme il n'y a pas de modèle Doctrine associé, nous n'allons pas créer un fournisseur de données mais une commande Symfony. L'idée est d'extraire tous les mots qui ont été utilisés dans l'index app. Voilà la nouvelle commande Symfony : (quelques éclaircissements après le code 🤔)
+
+```php
+<?php
+
+declare(strict_types=1);
+
+// src/Command/PopulateSuggestCommand.php (used by templates/blog/posts/_51.html.twig)
+
+namespace App\Command;
+
+use Doctrine\Inflector\Inflector;
+use Doctrine\Inflector\NoopWordInflector;
+use Elastica\Document;
+use FOS\ElasticaBundle\Elastica\Index;
+use FOS\ElasticaBundle\Finder\TransformedFinder;
+use FOS\ElasticaBundle\HybridResult;
+use FOS\ElasticaBundle\Paginator\FantaPaginatorAdapter;
+use Pagerfanta\Pagerfanta;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use function Symfony\Component\String\u;
+
+/**
+ * Populate the suggest elasticsearch index.
+ */
+final class PopulateSuggestCommand extends Command
+{
+    public const NAMESPACE = 'symfony-elastic';
+    public const CMD = 'populate';
+    public const DESC = 'Populate the "suggest" Elasticsearch index';
+
+    private $articlesFinder;
+    private $suggestIndex;
+    private $inflector;
+
+    public function __construct(TransformedFinder $articlesFinder, Index $suggestIndex)
+    {
+        parent::__construct();
+        $this->articlesFinder = $articlesFinder;
+        $this->suggestIndex = $suggestIndex;
+        $this->inflector = new Inflector(new NoopWordInflector(), new NoopWordInflector());
+    }
+
+    protected function configure(): void
+    {
+        [$namespace, $cmd, $desc] = [self::NAMESPACE, self::CMD, self::DESC];
+        $this->setName($namespace.':'.$cmd)
+            ->setDescription(self::DESC)
+            ->setHelp(
+                <<<EOT
+{$desc}
+<info>%command.full_name%</info>
+EOT
+            );
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $output->writeln(self::DESC);
+        $pagination = $this->findHybridPaginated($this->articlesFinder, '');
+        $nbPages = $pagination->getNbPages();
+        $keywords = [];
+
+        foreach (range(1, $nbPages) as $page) {
+            $pagination->setCurrentPage($page);
+            foreach ($pagination->getCurrentPageResults() as $result) {
+                if ($result instanceof HybridResult) {
+                    foreach ($result->getResult()->getSource() as $property => $text) {
+                        if ($property === 'type') {
+                            continue;
+                        }
+                        $text = strip_tags($text ?? '');
+                        $words = str_word_count($text, 2, 'çéâêîïôûàèùœÇÉÂÊÎÏÔÛÀÈÙŒ'); // FGS dot not remove french accents! 🙃
+                        $textArray = array_filter($words);
+                        $keywords = array_merge($keywords ?? [], $textArray);
+                    }
+                }
+            }
+        }
+
+            // Index by locale
+
+            // Remove small words and remaining craps (emojis) 😖
+            $keywords = array_unique(array_map('mb_strtolower', $keywords));
+            $keywords = array_filter($keywords, static function ($v) {
+                return u((string) $v)->length() > 2;
+            });
+            $documents = [];
+            foreach ($keywords as $idx => $keyword) {
+                $documents[] = (new Document())
+                    ->setType('keyword')
+                    ->set('suggest', $keyword);
+            }
+            $responseSet = $this->suggestIndex->addDocuments($documents);
+
+            $output->writeln(sprintf(' -> TODO: %d -> DONE: <info>%d</info>, keywords indexed.', count($documents), $responseSet->count()));
 
 
+        return 0;
+    }
+
+    /**
+     * @return Pagerfanta<mixed>
+     */
+    private function findHybridPaginated(TransformedFinder $articlesFinder, string $query): Pagerfanta
+    {
+        $paginatorAdapter = $articlesFinder->createHybridPaginatorAdapter($query);
+
+        return new Pagerfanta(new FantaPaginatorAdapter($paginatorAdapter));
+    }
+}
+```
+
+Voici la sortie console de la nouvelle tâche "populate" du MakeFile :
+
+![make](https://user-images.githubusercontent.com/16940107/105615487-6d67cf80-5dd1-11eb-9436-54bd992f47f0.png)
+
+Le contenu de cette nouvelle entrée :
+
+![reset](https://user-images.githubusercontent.com/16940107/105615543-cd5e7600-5dd1-11eb-88b9-c8d016662600.png)
+
+Vous pouvez trouver le [MakeFile Symfony complet dans ce snippet](https://www.strangebuzz.com/fr/snippets/le-makefile-parfait-pour-symfony) moi j'ai utilisé que les lignes dont j'ai besoin. Maintenant que l'index est peuplé, voyons comment l'utiliser pour l'implémentation de la fonctionnalité autocomplete.
+
+<h4>Implémentation de l'autocomplete</h4>
+
+Le but ici va être d'ajouter une action qui va retourner via Ajax les suggestions pour le widget autocomplete alors que l'utilisateur saisit un mot-clé. Créons un nouveau contrôleur dédié à cette tâche :
+
+```php
+<?php
+
+declare(strict_types=1);
+
+// src/Controller/SuggestController.php
+
+namespace App\Controller;
+
+use App\Elasticsearch\ElastiCoil;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
 
 
+final class SuggestController extends AbstractController
+{
+    /**
+     * @Route("/suggest", name="suggest")
+     */
+    public function suggest(Request $request, ElastiCoil $elastiCoil): JsonResponse
+    {
+        $q = (string) $request->query->get('q', '');
 
+        return $this->json($elastiCoil->getSuggestions($q));
+    }
+}
+```
+
+Et le service Elasticsearch personnalisé :
+
+```php
+<?php
+
+
+declare(strict_types=1);
+
+// src/Elasticsearch/ElastiCoil.php
+
+namespace App\Elasticsearch;
+
+use Elastica\Query;
+use Elastica\Suggest;
+use Elastica\Suggest\Completion;
+use Elastica\Util;
+use FOS\ElasticaBundle\Elastica\Index;
+
+final class ElastiCoil
+{
+    public const SUGGEST_NAME = 'completion';
+    public const SUGGEST_FIELD = 'suggest';
+
+    private $suggestIndex;
+
+    public function __construct(Index $suggestIndex)
+    {
+        $this->suggestIndex = $suggestIndex;
+    }
+
+    /**
+     * Get the a suggest object for a keyword and locale.
+     */
+    public function getSuggest(string $q): Suggest
+    {
+        $completionSuggest = (new Completion(self::SUGGEST_NAME, self::SUGGEST_FIELD))
+            ->setPrefix(Util::escapeTerm($q))
+            ->setSize(5);
+
+        return new Suggest($completionSuggest);
+    }
+
+    /**
+     * Return suggestions for a keyword and locale as a simple array.
+     *
+     * @return array<string>
+     */
+    public function getSuggestions(string $q): array
+    {
+        $suggest = $this->getSuggest($q);
+        $query = (new Query())->setSuggest($suggest);
+        $suggests = $this->suggestIndex->search($query)->getSuggests();
+
+        return $suggests[self::SUGGEST_NAME][0]['options'] ?? [];
+    }
+}
+```
+     
+Quelques explications : 💡
+
+*Comme l'action de recherche, nous récupérons la saisie de l'utilisateur par le paramètre GET "q".
+*Ensuite nous créons un objet elastica Suggest avec le nom de la propriété du mapping à utiliser.
+*Juste en dessous, on ajoute un contexte qui va nous permettre de filtrer les mots retournés : dans ce cas on filtre selon la langue de la page en cours (en ou fr).
+*Ensuite, on extrait les options retournées par la réponse Elasticsearch.
+*Finalement, nous retournons une réponse de type JSON (JsonResponse) contenant un tableau simple avec les options à afficher à l'utilisateur.
 
 
 
