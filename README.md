@@ -717,25 +717,42 @@ Quelques explications : 💡
 
 * Comme l'action de recherche, nous récupérons la saisie de l'utilisateur par le paramètre GET "q".
 * Ensuite nous créons un objet elastica Suggest avec le nom de la propriété du mapping à utiliser.
-* Juste en dessous, on ajoute un contexte qui va nous permettre de filtrer les mots retournés : dans ce cas on filtre selon la langue de la page en cours (en ou fr).
+* Juste en dessous, on ajoute un contexte qui va nous permettre de filtrer les mots retournés.
 * Ensuite, on extrait les options retournées par la réponse Elasticsearch.
 * Finalement, nous retournons une réponse de type JSON (JsonResponse) contenant un tableau simple avec les options à afficher à l'utilisateur.
 
+<h4>Affichage des suggestions</h4>
 
+Maintenant que l'action de suggestion est faite, nous pouvons mettre en place un widget autocomplete qui va l'utiliser. Vous pouvez essayer dans le formulaire ci-dessous. C'est exactement le formulaire qui nous avons utilisé dans les articles précédents (un peu de JavaScript a été ajouté pour récupérer les suggestions). Mon code javascript pour l'extraction des données :
 
+```javascript
+{% block javascripts %}
+    <script>
+        $(document).ready(function(){
+            $("#search-field").on("paste keyup", function(){
+                var query = $(this).val();
+                if( query.length>= 3){
+                    var suggestions = $("#suggest-list");
+                    suggestions.empty();
+                    var search ={'q': query};
+                    $.ajax({
+                        url: "{{ path('suggest') }}",
+                        type: 'GET',
+                        data: search ,
+                        success: function(data) {
+                            if(data){
+                                $.each(data, function(index, elem){
+                                    suggestions.append("<option value='"+ elem.text +"'>");
+                                });
+                            }
+                        }
+                    })
+                }
+            });
+        });
+    </script>
 
+{% endblock %}
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+C'était la dernière partie de ce tutoriel Elasticsearch. C'était intéressant (mais très long !) de l'écrire en même temps que je développais ces fonctionnalités sur ce site web. Il y a encore beaucoup à faire, mais je suis déjà content avec ce qui a été mis en place 😊
